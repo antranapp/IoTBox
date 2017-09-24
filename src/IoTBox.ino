@@ -58,15 +58,18 @@ class OpenOperation {
     }
 };
 
-volatile int swtichState = LOW;
+volatile int switchState = LOW;
+volatile bool requestDisplayStatus = true;
+volatile bool requestDisplayTime = false;
 volatile bool requestOpeningOperation = false;
 
-Timer clockTimer(1000, displayTime); // timer used to display the clock on the lcd display
+Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
 
 OpenOperation openOperation;
 
-int hour;
-int minute;
+volatile int hour;
+volatile int minute;
+volatile int second;
 
 void setup() {
     // Ouput pins
@@ -74,7 +77,7 @@ void setup() {
     pinMode(RELAYPIN, OUTPUT);
 
     // Interrupt pin
-    pinMode(SWITCHPIN, INPUT_PULLDOWN);
+    pinMode(SWITCHPIN, INPUT);
     attachInterrupt(SWITCHPIN, updateSwitchState, CHANGE);
     pinMode(BUTTONPIN, INPUT_PULLDOWN);
     attachInterrupt(BUTTONPIN, updateButtonState, RISING);
@@ -89,47 +92,85 @@ void setup() {
     // Setup timezone
     Time.zone(+2.00);
 
-    //clockTimer.start();
+    clockTimer.start();
 }
 
 void loop() {
     if (requestOpeningOperation) {
-        requestOpeningOperation = false;
+        lcd.setCursor(0,1);
+        lcd.print("               ");
+        lcd.setCursor(0,1);
+        lcd.print("will open....");
+
         digitalWrite(LEDPIN, HIGH);
         openOperation.start();
+
+        requestOpeningOperation = false;
     } else {
         digitalWrite(LEDPIN, LOW);
     }
 
-    //displayStatus();
+    displayInformation();
 }
 
 void displayStatus() {
-    lcd.setCursor(0,1);
-    if (digitalRead(SWITCHPIN) == 1) {
-        lcd.print("LOCKED");
-    } else {
-        lcd.print("OPEN");
+    if (requestDisplayStatus) {
+        if (switchState == HIGH) {
+            lcd.setCursor(0,1);
+            lcd.print("               ");
+            lcd.setCursor(0,1);
+            lcd.print("LOCKED");
+        } else {
+            lcd.setCursor(0,1);
+            lcd.print("               ");
+            lcd.setCursor(0,1);
+            lcd.print("OPEN");
+        }
+
+        requestDisplayStatus = false;
     }
 }
 
-void displayTime() {
-    lcd.setCursor(0,0);
-    // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
-    lcd.print(Time.format(Time.now(), "%T"));
+void updateTime() {
 
     hour = Time.hour();
     minute = Time.minute();
+    second = Time.second();
+
+    requestDisplayTime = true;
+
+    checkOpenCondition();
+}
+
+void displayTime() {
+    if (requestDisplayTime) {
+        lcd.setCursor(0,0);
+        // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
+        lcd.print(Time.format(Time.now(), "%T"));
+
+        requestDisplayTime = false;
+    }
+}
+
+void displayInformation() {
+    displayTime();
+
+    if (!openOperation.isRunning()) {
+        displayStatus();
+    }
 }
 
 void updateSwitchState() {
-    swtichState = digitalRead(SWITCHPIN);
+    switchState = digitalRead(SWITCHPIN);
+    requestDisplayStatus = true;
 }
 
 void updateButtonState() {
     requestOpeningOperation = true;
 }
 
-bool checkOpenCondition() {
-    return (hour == 9) && (minute == 15);
+void checkOpenCondition() {
+    if ((hour == 11) && (minute == 46) && (second == 0)) {
+        requestOpeningOperation = true;
+    }
 }
