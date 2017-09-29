@@ -56,6 +56,7 @@ volatile bool requestDisplayStatus = true;
 volatile bool requestDisplayTime = false;
 volatile bool requestDisplayConfigurationTime = true;
 volatile bool requestOpeningOperation = false;
+volatile bool isLCDBusy = false;
 
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
 
@@ -116,11 +117,6 @@ void setup() {
 
 void loop() {
     if (requestOpeningOperation) {
-        lcd.setCursor(0,1);
-        lcd.print("               ");
-        lcd.setCursor(0,1);
-        lcd.print("will open....");
-
         digitalWrite(LEDPIN, HIGH);
         openOperation.start();
 
@@ -134,19 +130,22 @@ void loop() {
 
 void displayStatus() {
     if (requestDisplayStatus) {
-        if (switchState == HIGH) {
-            lcd.setCursor(0,1);
-            lcd.print("               ");
-            lcd.setCursor(0,1);
-            lcd.print("LOCKED");
-        } else {
-            lcd.setCursor(0,1);
-            lcd.print("               ");
-            lcd.setCursor(0,1);
-            lcd.print("OPEN");
+        if (!isLCDBusy) {
+            isLCDBusy = true;
+            if (switchState == HIGH) {
+                lcd.setCursor(0,1);
+                lcd.print("               ");
+                lcd.setCursor(0,1);
+                lcd.print("LOCKED");
+            } else {
+                lcd.setCursor(0,1);
+                lcd.print("               ");
+                lcd.setCursor(0,1);
+                lcd.print("OPEN");
+            }
+            isLCDBusy = false;
+            requestDisplayStatus = false;
         }
-
-        requestDisplayStatus = false;
     }
 }
 
@@ -164,29 +163,37 @@ void updateTime() {
 void displayTime() {
     if (!requestDisplayConfigurationTime) {
         if (requestDisplayTime) {
-            lcd.setCursor(0,0);
-            lcd.print("          ");
-            lcd.setCursor(0,0);
-            // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
-            lcd.print(Time.format(Time.now(), "%T"));
+            if (!isLCDBusy) {
+                isLCDBusy = true;
+                lcd.setCursor(0,0);
+                lcd.print("          ");
+                lcd.setCursor(0,0);
+                // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
+                lcd.print(Time.format(Time.now(), "%T"));
+                isLCDBusy = false;
 
-            requestDisplayTime = false;
+                requestDisplayTime = false;
+            }
         }
     }
 }
 
 void displayConfigurationTime() {
     if (requestDisplayConfigurationTime) {
-        lcd.setCursor(11,0);
-        lcd.print(configurationTime.hour);
+        if (!isLCDBusy) {
+            isLCDBusy = true;
+            lcd.setCursor(11,0);
+            lcd.print(configurationTime.hour);
 
-        lcd.setCursor(13,0);
-        lcd.print(":");
+            lcd.setCursor(13,0);
+            lcd.print(":");
 
-        lcd.setCursor(14,0);
-        lcd.print(configurationTime.minute);
+            lcd.setCursor(14,0);
+            lcd.print(configurationTime.minute);
+            isLCDBusy = false;
 
-        requestDisplayConfigurationTime = false;
+            requestDisplayConfigurationTime = false;
+        }
     }
 }
 
