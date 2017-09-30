@@ -5,7 +5,13 @@
  * Date: 17.09.2017
  */
 
+ STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
+ SYSTEM_MODE(AUTOMATIC)
+ SYSTEM_THREAD(ENABLED);
+
 #include "Grove_LCD_RGB_Backlight.h"
+
+#define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
 #define BUTTONPIN D2 // Button reserved for further usage
 #define BUZZERPIN D3 // Buzzer reserved for further usage
@@ -13,25 +19,37 @@
 #define SWITCHPIN D6 // Switch for "LOCKED" or "OPEN" status.
 #define LEDPIN D7 // Status LED.
 
+unsigned long lastSync = millis();
+
 rgb_lcd lcd;
+
+int switchState = LOW; // HIGH = locked, LOW = open
+volatile bool requestDisplayStatus = true;
+volatile bool requestDisplayTime = false;
+volatile bool requestDisplayConfigurationTime = true;
+volatile bool requestOpeningOperation = false;
+volatile bool isLCDBusy = false;
 
 class OpenOperation {
   public:
 
     OpenOperation() {
-        _timer = new Timer(3000, (void (*)())&OpenOperation::callback, true);
+        _timer = new Timer(2000, (void (*)())&OpenOperation::callback, true);
     }
 
     void start() {
         // TODO: Check if box is arelady open
         // TODO: Delay 2 seconds after 2 consecutive open operations
         if (!isRunning()) {
-            lcd.setCursor(0,1);
-            lcd.print("               ");
-            lcd.setCursor(0,1);
-            lcd.print("opening....");
-            digitalWrite(RELAYPIN, HIGH);
-            _timer->reset();
+            // Only open the box when it is closed
+            if (switchState == HIGH) {
+                lcd.setCursor(0,1);
+                lcd.print("               ");
+                lcd.setCursor(0,1);
+                lcd.print("opening....");
+                digitalWrite(RELAYPIN, HIGH);
+                _timer->reset();
+            }
         }
     }
 
@@ -51,13 +69,6 @@ class OpenOperation {
     }
 };
 
-volatile int switchState = LOW;
-volatile bool requestDisplayStatus = true;
-volatile bool requestDisplayTime = false;
-volatile bool requestDisplayConfigurationTime = true;
-volatile bool requestOpeningOperation = false;
-volatile bool isLCDBusy = false;
-
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
 
 OpenOperation openOperation;
@@ -67,6 +78,7 @@ volatile int minute;
 volatile int second;
 
 int configureTime(String time);
+void syncTimeWithCloudIfNeeded();
 
 struct ConfigurationTime {
     uint8_t version;
@@ -75,8 +87,6 @@ struct ConfigurationTime {
 };
 
 ConfigurationTime configurationTime;
-
-STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
 
 void setup() {
     // Ouput pins
@@ -100,7 +110,7 @@ void setup() {
     Time.zone(+2.00);
 
     // Register the status of the box to Particle Cloud
-    Particle.variable("switchState", (int32_t)switchState);
+    Particle.variable("switchState", switchState);
 
     // Register the configureTime as a cloud function
     Particle.function("time", configureTime);
@@ -116,6 +126,8 @@ void setup() {
 }
 
 void loop() {
+    syncTimeWithCloudIfNeeded();
+
     if (requestOpeningOperation) {
         digitalWrite(LEDPIN, HIGH);
         openOperation.start();
@@ -126,6 +138,15 @@ void loop() {
     }
 
     displayInformation();
+}
+
+void syncTimeWithCloudIfNeeded() {
+    if (millis() - lastSync > ONE_DAY_MILLIS) {
+      // Request time synchronization from the Particle Cloud
+      Particle.syncTime();
+      waitUntil(Particle.syncTimeDone);
+      lastSync = millis();
+    }
 }
 
 void displayStatus() {
