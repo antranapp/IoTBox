@@ -152,7 +152,7 @@ int noteDurationsClose[] = {
 int melodyConfiguration[] = {
     NOTE_E7, NOTE_E7, 0, NOTE_E7,
     0, NOTE_C7, NOTE_E7, 0,
-    NOTE_G7, 0, 0,  0,
+    NOTE_G7, 0, 0, 0,
     NOTE_G6, 0, 0, 0,
     NOTE_C7,
 };
@@ -287,7 +287,7 @@ void syncTimeWithCloudIfNeeded() {
 }
 
 void startBuzzerForOpenOperation() {
-    for (int thisNote = 0; thisNote < 8; thisNote++) {
+    for (int thisNote = 0; thisNote < 19; thisNote++) {
         int noteDuration = 1000/noteDurationsOpen[thisNote];
         tone(BUZZERPIN, melodyOpen[thisNote], noteDuration);
         int pauseBetweenNotes = noteDuration * 1.30;
@@ -297,7 +297,7 @@ void startBuzzerForOpenOperation() {
 }
 
 void startBuzzerForClose() {
-    for (int thisNote = 0; thisNote < 8; thisNote++) {
+    for (int thisNote = 0; thisNote < 9; thisNote++) {
         int noteDuration = 1000/noteDurationsClose[thisNote];
         tone(BUZZERPIN, melodyClose[thisNote], noteDuration);
         int pauseBetweenNotes = noteDuration * 1.30;
@@ -307,7 +307,7 @@ void startBuzzerForClose() {
 }
 
 void startBuzzerForConfiguration() {
-    for (int thisNote = 0; thisNote < 8; thisNote++) {
+    for (int thisNote = 0; thisNote < 17; thisNote++) {
         int noteDuration = 1000/noteDurationsConfiguration[thisNote];
         tone(BUZZERPIN, melodyConfiguration[thisNote], noteDuration);
         int pauseBetweenNotes = noteDuration * 1.30;
