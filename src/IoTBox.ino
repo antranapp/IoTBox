@@ -210,6 +210,9 @@ volatile int second;
 int configureTime(String time);
 void syncTimeWithCloudIfNeeded();
 
+volatile int displayTimerCounter = 0;
+int displayState = 0; // 0 = off, 1 = on
+
 struct ConfigurationTime {
     uint8_t version;
     int hour;
@@ -231,11 +234,8 @@ void setup() {
     pinMode(SWITCHPIN, INPUT);
     attachInterrupt(SWITCHPIN, updateSwitchState, CHANGE);
 
-    //pinMode(BUTTONPIN, INPUT_PULLDOWN);
-    //attachInterrupt(BUTTONPIN, updateButtonState, RISING);
-    pinMode(BUTTONPIN, INPUT);
     // Setup button timers (all in milliseconds / ms)
-    // (These are default if not set, but changeable for convenience)
+    pinMode(BUTTONPIN, INPUT);
     button.debounceTime   = 20;   // Debounce timer in ms
     button.multiclickTime = 250;  // Time limit for multi clicks
     button.longClickTime  = 1000; // time until "held-down clicks" register
@@ -245,7 +245,8 @@ void setup() {
 
     // Setup the lcd
     lcd.begin(16, 2); // Set up the LCD's number of columns and rows.
-    lcd.setRGB(200, 200, 200); // Set up background backlight color.
+    //lcd.setRGB(100, 100, 100); // Set up background backlight color.
+    displayState = 1;
 
     // Setup timezone
     Time.zone(+2.00);
@@ -356,6 +357,11 @@ void displayStatus() {
         publishData();
 
         if (!isLCDBusy) {
+            if (!displayState) {
+                lcd.display();
+                lcd.setColorWhite();
+                displayState = 1;
+            }
             isLCDBusy = true;
             if (switchState == HIGH) {
                 lcd.setCursor(0,1);
@@ -384,13 +390,35 @@ void updateTime() {
 
     //requestDisplayTime = true;
 
+    checkDisplayCondition();
+
     checkOpenCondition();
 }
 
+void checkDisplayCondition() {
+    // Only check to turn off the display when the display is currently on
+    if (displayState == 1) {
+        displayTimerCounter++;
+        Serial.println(displayTimerCounter);
+        if (displayTimerCounter > 20) {
+            displayTimerCounter = 0;
+            displayState = 0;
+            lcd.setColorAll();
+            lcd.noDisplay();
+            Serial.println("should turn off display now");
+        }
+    }
+}
+
 void displayTime() {
+    if (!displayState) {
+        return;
+    }
+
     if (!requestDisplayConfigurationTime) {
         if (requestDisplayTime) {
             if (!isLCDBusy) {
+
                 isLCDBusy = true;
                 lcd.setCursor(0,0);
                 lcd.print("          ");
@@ -411,6 +439,11 @@ void displayConfigurationTime() {
         startBuzzerForConfiguration();
 
         if (!isLCDBusy) {
+            if (!displayState) {
+                lcd.display();
+                lcd.setColorWhite();
+                displayState = 1;
+            }
             isLCDBusy = true;
             lcd.setCursor(11,0);
             lcd.print(configurationTime.hour);
@@ -441,11 +474,8 @@ void displayInformation() {
 void updateSwitchState() {
     switchState = digitalRead(SWITCHPIN);
     requestDisplayStatus = true;
+    displayTimerCounter = 0;
 }
-
-// void updateButtonState() {
-//     startOpenOperation("");
-// }
 
 int startOpenOperation(String command) {
     requestOpeningOperation = true;
@@ -460,6 +490,9 @@ void checkOpenCondition() {
 
 int configureTime(String time)
 {
+    // Keep the display on
+    displayTimerCounter = 0;
+
     // Declare the variables of the parts of the String
     String hourString, minuteString;
     int hour, minute;
