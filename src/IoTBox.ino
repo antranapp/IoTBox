@@ -10,6 +10,7 @@
  SYSTEM_THREAD(ENABLED);
 
 #include "Grove_LCD_RGB_Backlight.h"
+#include "clickButton.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -219,6 +220,8 @@ ConfigurationTime configurationTime;
 
 const char *PUBLISH_EVENT_NAME = "status";
 
+ClickButton button(BUTTONPIN, LOW);
+
 void setup() {
     // Ouput pins
     pinMode(LEDPIN, OUTPUT);
@@ -227,8 +230,15 @@ void setup() {
     // Interrupt pin
     pinMode(SWITCHPIN, INPUT);
     attachInterrupt(SWITCHPIN, updateSwitchState, CHANGE);
-    pinMode(BUTTONPIN, INPUT_PULLDOWN);
-    attachInterrupt(BUTTONPIN, updateButtonState, RISING);
+
+    //pinMode(BUTTONPIN, INPUT_PULLDOWN);
+    //attachInterrupt(BUTTONPIN, updateButtonState, RISING);
+    pinMode(BUTTONPIN, INPUT);
+    // Setup button timers (all in milliseconds / ms)
+    // (These are default if not set, but changeable for convenience)
+    button.debounceTime   = 20;   // Debounce timer in ms
+    button.multiclickTime = 250;  // Time limit for multi clicks
+    button.longClickTime  = 1000; // time until "held-down clicks" register
 
     // Do not open the box when system is turned on
     digitalWrite(RELAYPIN, LOW);
@@ -265,6 +275,8 @@ void setup() {
 void loop() {
     syncTimeWithCloudIfNeeded();
 
+    checkButtonState();
+
     if (requestOpeningOperation) {
         digitalWrite(LEDPIN, HIGH);
         startBuzzerForOpenOperation();
@@ -275,6 +287,27 @@ void loop() {
     }
 
     displayInformation();
+}
+
+void checkButtonState() {
+    int function = 0;
+
+    if (requestOpeningOperation) {
+        return;
+    }
+
+    // Update button state
+    button.Update();
+
+    // Save click codes in LEDfunction, as click codes are reset at next Update()
+    if (button.clicks != 0) {
+        function = button.clicks;
+    }
+
+    if (function == 3 || function == -3) { // TRIPLE (LONG) click
+        startOpenOperation("");
+    }
+
 }
 
 void syncTimeWithCloudIfNeeded() {
@@ -410,9 +443,9 @@ void updateSwitchState() {
     requestDisplayStatus = true;
 }
 
-void updateButtonState() {
-    startOpenOperation("");
-}
+// void updateButtonState() {
+//     startOpenOperation("");
+// }
 
 int startOpenOperation(String command) {
     requestOpeningOperation = true;
