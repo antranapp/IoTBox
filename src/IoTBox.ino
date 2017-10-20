@@ -122,6 +122,7 @@ int switchState = LOW; // HIGH = locked, LOW = open
 volatile bool requestDisplayStatus = true;
 volatile bool requestDisplayTime = false;
 volatile bool requestDisplayConfigurationTime = true;
+volatile bool requestDisplayReminderTime = true;
 volatile bool requestOpeningOperation = false;
 volatile bool isLCDBusy = false;
 
@@ -215,11 +216,12 @@ int displayState = 0; // 0 = off, 1 = on
 
 struct ConfigurationTime {
     uint8_t version;
-    int hour;
-    int minute;
+    uint8_t hour;
+    uint8_t minute;
 };
 
 ConfigurationTime configurationTime;
+ConfigurationTime reminderTime;
 
 const char *PUBLISH_EVENT_NAME = "status";
 
@@ -257,6 +259,9 @@ void setup() {
 
     // Register the configureTime as a cloud function
     Particle.function("time", configureTime);
+
+    // Register the configureReminderTime as a cloud function
+    Particle.function("reminderTime", configureReminderTime);
 
     // Register the startOpenOperation as a cloud function
     Particle.function("open", startOpenOperation);
@@ -303,6 +308,16 @@ void checkButtonState() {
     // Save click codes in LEDfunction, as click codes are reset at next Update()
     if (button.clicks != 0) {
         function = button.clicks;
+    }
+
+    if (function == 1 || function == -1) { // TRIPLE (LONG) click
+        // Only check to turn on the display when the display is currently off
+        if (displayState == 0) {
+            lcd.display();
+            lcd.setColorWhite();
+            displayState = 1;
+            displayTimerCounter = 0;
+        }
     }
 
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
@@ -365,14 +380,14 @@ void displayStatus() {
             isLCDBusy = true;
             if (switchState == HIGH) {
                 lcd.setCursor(0,1);
-                lcd.print("               ");
+                lcd.print("       ");
                 lcd.setCursor(0,1);
                 lcd.print("CLOSED");
 
                 startBuzzerForClose();
             } else {
                 lcd.setCursor(0,1);
-                lcd.print("               ");
+                lcd.print("       ");
                 lcd.setCursor(0,1);
                 lcd.print("OPEN");
             }
@@ -418,7 +433,6 @@ void displayTime() {
     if (!requestDisplayConfigurationTime) {
         if (requestDisplayTime) {
             if (!isLCDBusy) {
-
                 isLCDBusy = true;
                 lcd.setCursor(0,0);
                 lcd.print("          ");
@@ -433,10 +447,8 @@ void displayTime() {
     }
 }
 
-void displayConfigurationTime() {
-    if (requestDisplayConfigurationTime) {
-
-        startBuzzerForConfiguration();
+void displayReminderTime() {
+    if (requestDisplayReminderTime) {
 
         if (!isLCDBusy) {
             if (!displayState) {
@@ -445,6 +457,41 @@ void displayConfigurationTime() {
                 displayState = 1;
             }
             isLCDBusy = true;
+
+            lcd.setCursor(11,1);
+            lcd.print("     ");
+
+            lcd.setCursor(11,1);
+            lcd.print(reminderTime.hour);
+
+            lcd.setCursor(13,1);
+            lcd.print(":");
+
+            lcd.setCursor(14,1);
+            lcd.print(reminderTime.minute);
+            isLCDBusy = false;
+
+            requestDisplayReminderTime = false;
+        }
+
+        startBuzzerForConfiguration();
+    }
+}
+
+void displayConfigurationTime() {
+    if (requestDisplayConfigurationTime) {
+
+        if (!isLCDBusy) {
+            if (!displayState) {
+                lcd.display();
+                lcd.setColorWhite();
+                displayState = 1;
+            }
+            isLCDBusy = true;
+
+            lcd.setCursor(11,0);
+            lcd.print("     ");
+
             lcd.setCursor(11,0);
             lcd.print(configurationTime.hour);
 
@@ -457,6 +504,8 @@ void displayConfigurationTime() {
 
             requestDisplayConfigurationTime = false;
         }
+
+        startBuzzerForConfiguration();
     }
 }
 
@@ -464,6 +513,8 @@ void displayInformation() {
     displayTime();
 
     displayConfigurationTime();
+
+    displayReminderTime();
 
     if (!openOperation.isRunning()) {
         displayStatus();
@@ -488,8 +539,33 @@ void checkOpenCondition() {
     }
 }
 
-int configureTime(String time)
-{
+int configureReminderTime(String time) {
+    // Keep the display on
+    displayTimerCounter = 0;
+
+    // Declare the variables of the parts of the String
+    String hourString, minuteString;
+    int hour, minute;
+    int delimeterPosition = time.indexOf(",");
+
+    if (delimeterPosition >= 0) {
+
+        hourString = time.substring(0, delimeterPosition);
+        minuteString = time.substring(delimeterPosition+1);
+        hour = hourString.toInt();
+        minute = minuteString.toInt();
+        reminderTime = { 0, hour, minute };
+
+        EEPROM.put(sizeof(reminderTime), reminderTime);
+
+        requestDisplayReminderTime = true;
+
+        return 1;
+    }
+    return -1;
+}
+
+int configureTime(String time) {
     // Keep the display on
     displayTimerCounter = 0;
 
