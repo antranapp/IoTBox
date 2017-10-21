@@ -5,12 +5,16 @@
  * Date: 17.09.2017
  */
 
+ PRODUCT_ID(5673);
+ PRODUCT_VERSION(1);
+
  STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
  SYSTEM_MODE(AUTOMATIC)
  SYSTEM_THREAD(ENABLED);
 
 #include "Grove_LCD_RGB_Backlight.h"
 #include "clickButton.h"
+#include "ContactSwitch.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -166,6 +170,23 @@ int noteDurationsConfiguration[] = {
     12,
 };
 
+int melodyReminder[] = {
+    NOTE_E7, NOTE_E7, 0, NOTE_E7,
+    0, NOTE_C7, NOTE_E7, 0,
+    NOTE_G7, 0, 0, 0,
+    NOTE_G6, 0, 0, 0,
+    NOTE_C7,
+};
+int noteDurationsReminder[] = {
+    12, 12, 12, 12,
+    12, 12, 12, 12,
+    12, 12, 12, 12,
+    12, 12, 12, 12,
+    12,
+};
+
+int reminderCounter = 0;
+
 class OpenOperation {
   public:
 
@@ -226,18 +247,21 @@ ConfigurationTime reminderTime;
 const char *PUBLISH_EVENT_NAME = "status";
 
 ClickButton button(BUTTONPIN, LOW);
+ContactSwitch switchButton(SWITCHPIN);
+
+bool isStarting = true;
 
 void setup() {
     // Ouput pins
     pinMode(LEDPIN, OUTPUT);
     pinMode(RELAYPIN, OUTPUT);
 
-    // Interrupt pin
-    pinMode(SWITCHPIN, INPUT);
-    attachInterrupt(SWITCHPIN, updateSwitchState, CHANGE);
+    // Setup switchButton timers (all in milliseconds / ms)
+    //pinMode(SWITCHPIN, INPUT);
+    //attachInterrupt(SWITCHPIN, updateSwitchState, CHANGE);
+    switchButton.debounceTime = 1000;   // Debounce timer in ms
 
     // Setup button timers (all in milliseconds / ms)
-    pinMode(BUTTONPIN, INPUT);
     button.debounceTime   = 20;   // Debounce timer in ms
     button.multiclickTime = 250;  // Time limit for multi clicks
     button.longClickTime  = 1000; // time until "held-down clicks" register
@@ -282,6 +306,7 @@ void loop() {
     syncTimeWithCloudIfNeeded();
 
     checkButtonState();
+    checkSwitchState();
 
     if (requestOpeningOperation) {
         digitalWrite(LEDPIN, HIGH);
@@ -293,6 +318,8 @@ void loop() {
     }
 
     displayInformation();
+
+    isStarting = false;
 }
 
 void checkButtonState() {
@@ -305,12 +332,12 @@ void checkButtonState() {
     // Update button state
     button.Update();
 
-    // Save click codes in LEDfunction, as click codes are reset at next Update()
+    // Save click codes in function, as click codes are reset at next Update()
     if (button.clicks != 0) {
         function = button.clicks;
     }
 
-    if (function == 1 || function == -1) { // TRIPLE (LONG) click
+    if (function == 1 || function == -1) { // (LONG) click
         // Only check to turn on the display when the display is currently off
         if (displayState == 0) {
             lcd.display();
@@ -323,7 +350,22 @@ void checkButtonState() {
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
         startOpenOperation("");
     }
+}
 
+void checkSwitchState() {
+    // Update button state
+    switchButton.Update();
+
+    bool currentState = switchButton.stableState;
+
+    // Only display the status if state is changed
+    if (currentState != switchState) {
+        switchState = currentState;
+        requestDisplayStatus = true;
+        displayTimerCounter = 0;
+        Serial.print("SwitchButton:");
+        Serial.println(switchState);
+    }
 }
 
 void syncTimeWithCloudIfNeeded() {
@@ -336,32 +378,50 @@ void syncTimeWithCloudIfNeeded() {
 }
 
 void startBuzzerForOpenOperation() {
-    for (int thisNote = 0; thisNote < 19; thisNote++) {
-        int noteDuration = 1000/noteDurationsOpen[thisNote];
-        tone(BUZZERPIN, melodyOpen[thisNote], noteDuration);
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        noTone(BUZZERPIN);
+    if (!isStarting) {
+        for (int thisNote = 0; thisNote < 19; thisNote++) {
+            int noteDuration = 1000/noteDurationsOpen[thisNote];
+            tone(BUZZERPIN, melodyOpen[thisNote], noteDuration);
+            int pauseBetweenNotes = noteDuration * 1.30;
+            delay(pauseBetweenNotes);
+            noTone(BUZZERPIN);
+        }
     }
 }
 
 void startBuzzerForClose() {
-    for (int thisNote = 0; thisNote < 9; thisNote++) {
-        int noteDuration = 1000/noteDurationsClose[thisNote];
-        tone(BUZZERPIN, melodyClose[thisNote], noteDuration);
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        noTone(BUZZERPIN);
+    if (!isStarting) {
+        for (int thisNote = 0; thisNote < 9; thisNote++) {
+            int noteDuration = 1000/noteDurationsClose[thisNote];
+            tone(BUZZERPIN, melodyClose[thisNote], noteDuration);
+            int pauseBetweenNotes = noteDuration * 1.30;
+            delay(pauseBetweenNotes);
+            noTone(BUZZERPIN);
+        }
     }
 }
 
 void startBuzzerForConfiguration() {
-    for (int thisNote = 0; thisNote < 17; thisNote++) {
-        int noteDuration = 1000/noteDurationsConfiguration[thisNote];
-        tone(BUZZERPIN, melodyConfiguration[thisNote], noteDuration);
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        noTone(BUZZERPIN);
+    if (!isStarting) {
+        for (int thisNote = 0; thisNote < 17; thisNote++) {
+            int noteDuration = 1000/noteDurationsConfiguration[thisNote];
+            tone(BUZZERPIN, melodyConfiguration[thisNote], noteDuration);
+            int pauseBetweenNotes = noteDuration * 1.30;
+            delay(pauseBetweenNotes);
+            noTone(BUZZERPIN);
+        }
+    }
+}
+
+void startBuzzerForReminder() {
+    if (!isStarting) {
+        for (int thisNote = 0; thisNote < 17; thisNote++) {
+            int noteDuration = 1000/noteDurationsReminder[thisNote];
+            tone(BUZZERPIN, melodyReminder[thisNote], noteDuration);
+            int pauseBetweenNotes = noteDuration * 1.30;
+            delay(pauseBetweenNotes);
+            noTone(BUZZERPIN);
+        }
     }
 }
 
@@ -408,6 +468,8 @@ void updateTime() {
     checkDisplayCondition();
 
     checkOpenCondition();
+
+    checkReminderCondition();
 }
 
 void checkDisplayCondition() {
@@ -521,13 +583,6 @@ void displayInformation() {
     }
 }
 
-
-void updateSwitchState() {
-    switchState = digitalRead(SWITCHPIN);
-    requestDisplayStatus = true;
-    displayTimerCounter = 0;
-}
-
 int startOpenOperation(String command) {
     requestOpeningOperation = true;
     return 1;
@@ -536,6 +591,16 @@ int startOpenOperation(String command) {
 void checkOpenCondition() {
     if ((hour == configurationTime.hour) && (minute == configurationTime.minute) && (second == 0)) {
         requestOpeningOperation = true;
+    }
+}
+
+// Reminder when the box is still open
+void checkReminderCondition() {
+    if (switchState == LOW) {
+        // TODO: Reminder every 5 minutes when the box is still open
+        if ((hour == reminderTime.hour) && (minute == reminderTime.minute) && (second == 0)) {
+            requestOpeningOperation = true;
+        }
     }
 }
 
@@ -556,7 +621,7 @@ int configureReminderTime(String time) {
         minute = minuteString.toInt();
         reminderTime = { 0, hour, minute };
 
-        EEPROM.put(sizeof(reminderTime), reminderTime);
+        EEPROM.put(sizeof(configurationTime), reminderTime);
 
         requestDisplayReminderTime = true;
 
