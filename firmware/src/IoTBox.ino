@@ -16,6 +16,7 @@
 #include "ContactSwitch.h"
 #include "Display.h"
 #include "ConfigurationTime.h"
+#include "OpenOperation.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -186,43 +187,9 @@ int noteDurationsReminder[] = {
 
 int reminderCounter = 0;
 
-class OpenOperation {
-  public:
-
-    OpenOperation() {
-        _timer = new Timer(2000, (void (*)())&OpenOperation::callback, true);
-    }
-
-    void start() {
-        // TODO: Delay 2 seconds after 2 consecutive open operations
-        if (!isRunning()) {
-            // Only open the box when it is closed
-            if (switchState == HIGH) {
-                digitalWrite(RELAYPIN, HIGH);
-                _timer->reset();
-            }
-        }
-    }
-
-    void stop() {
-        digitalWrite(RELAYPIN, LOW);
-        _timer->dispose();
-    }
-
-    bool isRunning() {
-        return _timer->isActive();
-    }
-
-  private:
-    Timer* _timer;
-    void callback(void) {
-        digitalWrite(RELAYPIN, LOW);
-    }
-};
-
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
 
-OpenOperation openOperation;
+OpenOperation openOperation(RELAYPIN);
 
 volatile int hour;
 volatile int minute;
@@ -244,7 +211,6 @@ bool isStarting = true;
 void setup() {
     // Ouput pins
     pinMode(LEDPIN, OUTPUT);
-    pinMode(RELAYPIN, OUTPUT);
 
     // Setup switchButton timers (all in milliseconds / ms)
     //pinMode(SWITCHPIN, INPUT);
