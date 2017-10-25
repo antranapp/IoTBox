@@ -205,29 +205,21 @@ void updateTime() {
     minute = Time.minute();
     second = Time.second();
 
-    //requestDisplayTime = true;
-
     display.updateTimerCounter();
 
     checkOpenCondition();
 
     checkReminderCondition();
+
+    requestDisplayTime = true;
 }
 
 void displayTime() {
-    if (!requestDisplayConfigurationTime) {
-        if (requestDisplayTime) {
-            // if (!isLCDBusy) {
-            //     isLCDBusy = true;
-            //     lcd.setCursor(0,0);
-            //     lcd.print("          ");
-            //     lcd.setCursor(0,0);
-            //     // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
-            //     lcd.print(Time.format(Time.now(), "%T"));
-            //     isLCDBusy = false;
-            //
-            //     requestDisplayTime = false;
-            // }
+    if (requestDisplayTime) {
+        // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
+        String timeString = Time.format(Time.now(), "%T");
+        if (display.showTime(timeString)) {
+            requestDisplayTime = false;
         }
     }
 }

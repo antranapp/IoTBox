@@ -13,6 +13,7 @@ class Display {
         void turnOn();
         void turnOff();
 
+        bool showTime(String timeString);
         bool showStatus(bool status);
         bool showOpenTime(ConfigurationTime time);
         bool showReminderTime(ConfigurationTime time);

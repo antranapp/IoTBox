@@ -8,13 +8,14 @@ Display::Display() {
 }
 
 void Display::setup() {
-    _lcd.begin(16, 2); // Set up the LCD's number of columns and rows.
+    _lcd.begin(16, 2);
     _displayIsOn = true;
 }
 
 void Display::updateTimerCounter() {
     if (_displayIsOn) {
         _displayTimerCounter++;
+        //Serial.println(_displayTimerCounter);
         if (_displayTimerCounter > 20) {
             turnOff();
             _displayTimerCounter = 0;
@@ -36,7 +37,27 @@ void Display::turnOff() {
     _lcd.noDisplay();
 }
 
+bool Display::showTime(String timeString) {
+
+    if (!_displayIsOn) {
+        return true;
+    }
+
+    if (!_isLCDBusy) {
+
+        turnOn();
+
+        _showText(timeString, 0, 0);
+
+        return true;
+    }
+
+    return false;
+}
+
 bool Display::showOpenTime(ConfigurationTime time) {
+
+    _displayTimerCounter = 0;
 
     if (!_isLCDBusy) {
 
@@ -53,6 +74,8 @@ bool Display::showOpenTime(ConfigurationTime time) {
 
 bool Display::showReminderTime(ConfigurationTime time) {
 
+    _displayTimerCounter = 0;
+
     if (!_isLCDBusy) {
 
         turnOn();
@@ -68,13 +91,14 @@ bool Display::showReminderTime(ConfigurationTime time) {
 
 bool Display::showStatus(bool status) {
 
+    _displayTimerCounter = 0;
+
     if (!_isLCDBusy) {
 
         turnOn();
 
         if (status == HIGH) {
             _showText("CLOSED", 0, 1);
-            //startBuzzerForClose();
         } else {
             _showText("OPEN", 0, 1);
         }
@@ -86,8 +110,6 @@ bool Display::showStatus(bool status) {
 }
 
 void Display::_showText(String text, uint8_t row, uint8_t col) {
-    _displayTimerCounter = 0;
-
     _isLCDBusy = true;
 
     _lcd.setCursor(row,col);
