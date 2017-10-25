@@ -73,7 +73,7 @@ bool Display::showStatus(bool status) {
         turnOn();
 
         if (status == HIGH) {
-            _showText("CLOSE", 0, 1);
+            _showText("CLOSED", 0, 1);
             //startBuzzerForClose();
         } else {
             _showText("OPEN", 0, 1);
