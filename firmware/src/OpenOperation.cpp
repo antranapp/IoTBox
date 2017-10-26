@@ -3,6 +3,7 @@
 OpenOperation::OpenOperation(uint8_t relayPin) {
     _relayPin = relayPin;
     pinMode(_relayPin, OUTPUT);
+    digitalWrite(_relayPin, LOW);
 
     _timer = new Timer(2000, (void (*)())&OpenOperation::_callback, true);
 }
