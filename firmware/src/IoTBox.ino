@@ -274,7 +274,7 @@ void checkReminderCondition() {
     if (switchState == LOW) {
         // TODO: Reminder every 5 minutes when the box is still open
         if ((hour == reminderTime.hour) && (minute == reminderTime.minute) && (second == 0)) {
-            requestOpeningOperation = true;
+            buzzer.startForReminder();
         }
     }
 }
