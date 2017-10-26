@@ -1,30 +1,23 @@
 #include "OpenOperation.h"
 
-OpenOperation::OpenOperation(uint8_t relayPin) {
+OpenOperation::OpenOperation(uint8_t relayPin, uint8_t ledPin) {
     _relayPin = relayPin;
-    pinMode(_relayPin, OUTPUT);
-    digitalWrite(_relayPin, LOW);
-
-    _timer = new Timer(2000, (void (*)())&OpenOperation::_callback, true);
+    _ledPin = ledPin;
+    _isRunning = false;
 }
 
 void OpenOperation::start() {
-    // TODO: Delay 2 seconds after 2 consecutive open operations
-    if (!isRunning()) {
+    if (!_isRunning) {
+        _isRunning = true;
+        digitalWrite(_ledPin, HIGH);
         digitalWrite(_relayPin, HIGH);
-        _timer->reset();
-    }
-}
-
-void OpenOperation::stop() {
-    digitalWrite(_relayPin, LOW);
-    _timer->dispose();
+        delay(2000);
+        digitalWrite(_relayPin, LOW);
+        digitalWrite(_ledPin, LOW);
+        _isRunning = false;
+    };
 }
 
 bool OpenOperation::isRunning() {
-    return _timer->isActive();
-}
-
-void OpenOperation::_callback(void) {
-    digitalWrite(_relayPin, LOW);
+    return _isRunning;
 }

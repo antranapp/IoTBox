@@ -3,18 +3,15 @@
 class OpenOperation {
 
     public:
-        OpenOperation(uint8_t buttonPin);
+        OpenOperation(uint8_t relayPin, uint8_t ledPin);
 
         void start();
-
-        void stop();
 
         bool isRunning();
 
     private:
         uint8_t _relayPin;
+        uint8_t _ledPin;
 
-        Timer* _timer;
-
-        void _callback(void);
+        volatile bool _isRunning;
 };

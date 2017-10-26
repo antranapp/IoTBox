@@ -41,7 +41,7 @@ Buzzer buzzer(BUZZERPIN);
 
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
 
-OpenOperation openOperation(RELAYPIN);
+OpenOperation openOperation(RELAYPIN, LEDPIN);
 
 volatile int hour;
 volatile int minute;
@@ -63,6 +63,7 @@ bool isStarting = true;
 void setup() {
     // Ouput pins
     pinMode(LEDPIN, OUTPUT);
+    pinMode(RELAYPIN, OUTPUT);
 
     // Setup switchButton timers (all in milliseconds / ms)
     switchButton.debounceTime = 1000;   // Debounce timer in ms
