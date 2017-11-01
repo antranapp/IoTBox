@@ -343,6 +343,14 @@ int configureTimeZone(String timeZoneString) {
 
     EEPROM.put(0, timeZone);
 
+    Time.zone(timeZone);
+
+    // Force the display to turn on
+    display.turnOn();
+
+    // Display the time
+    requestDisplayTime = true;
+
     return 1;
 
 }
