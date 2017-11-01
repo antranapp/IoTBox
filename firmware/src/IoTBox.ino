@@ -81,9 +81,6 @@ void setup() {
     // Setup the lcd
     display.setup();
 
-    // Setup timezone
-    Time.zone(+1.00);
-
     // Register the status of the box to Particle Cloud
     switchState = digitalRead(SWITCHPIN);
     Particle.variable("switchState", switchState);
