@@ -36,6 +36,8 @@ volatile bool requestDisplayConfigurationTime = true;
 volatile bool requestDisplayReminderTime = true;
 volatile bool requestOpeningOperation = false;
 
+float timeZone = 0.0;
+
 Display display;
 Buzzer buzzer(BUZZERPIN);
 
@@ -80,11 +82,14 @@ void setup() {
     display.setup();
 
     // Setup timezone
-    Time.zone(+2.00);
+    Time.zone(+1.00);
 
     // Register the status of the box to Particle Cloud
     switchState = digitalRead(SWITCHPIN);
     Particle.variable("switchState", switchState);
+
+    // Register the configureTime as a cloud function
+    Particle.function("timeZone", configureTimeZone);
 
     // Register the configureTime as a cloud function
     Particle.function("time", configureTime);
@@ -96,14 +101,23 @@ void setup() {
     Particle.function("open", startOpenOperation);
 
     // Get the open time from EEPROM, set it to default if not saved
-    EEPROM.get(0, openTime);
+    EEPROM.get(0, timeZone);
+    if (timeZone == 0xFFFFFFFF) {
+        // EEPROM was empty -> initialize value
+        timeZone = 0.0;
+    }
+
+    Time.zone(timeZone);
+
+    // Get the open time from EEPROM, set it to default if not saved
+    EEPROM.get(sizeof(timeZone), openTime);
     if (openTime.version != 0) {
         // EEPROM was empty -> initialize default value
         openTime = { 0, 7, 0 };
     }
 
     // Get the reminder time from EEPROM, set it to default if not saved
-    EEPROM.get(sizeof(openTime), reminderTime);
+    EEPROM.get(sizeof(timeZone) + sizeof(openTime), reminderTime);
     if (openTime.version != 0) {
         // EEPROM was empty -> initialize default value
         openTime = { 0, 20, 30 };
@@ -294,7 +308,7 @@ int configureReminderTime(String time) {
         minute = minuteString.toInt();
         reminderTime = { 0, hour, minute };
 
-        EEPROM.put(sizeof(openTime), reminderTime);
+        EEPROM.put(sizeof(timeZone) + sizeof(openTime), reminderTime);
 
         requestDisplayReminderTime = true;
 
@@ -317,13 +331,23 @@ int configureTime(String time) {
         minute = minuteString.toInt();
         openTime = { 0, hour, minute };
 
-        EEPROM.put(0, openTime);
+        EEPROM.put(sizeof(timeZone), openTime);
 
         requestDisplayConfigurationTime = true;
 
         return 1;
     }
     return -1;
+}
+
+int configureTimeZone(String timeZoneString) {
+    // Declare the variables of the parts of the String
+    float timeZone = timeZoneString.toFloat();
+
+    EEPROM.put(0, timeZone);
+
+    return 1;
+
 }
 
 void publishData() {
