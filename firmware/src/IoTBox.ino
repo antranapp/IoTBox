@@ -18,6 +18,7 @@
 #include "ConfigurationTime.h"
 #include "OpenOperation.h"
 #include "Buzzer.h"
+#include "Setting.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -36,9 +37,9 @@ volatile bool requestDisplayConfigurationTime = true;
 volatile bool requestDisplayReminderTime = true;
 volatile bool requestOpeningOperation = false;
 
-float timeZone = 0.0;
+TimeZone timeZone = 0.0;
 
-Display display;
+Display display = Display();
 Buzzer buzzer(BUZZERPIN);
 
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
@@ -49,7 +50,7 @@ volatile int hour;
 volatile int minute;
 volatile int second;
 
-int configureTime(String time);
+int configureOpenTime(String time);
 void syncTimeWithCloudIfNeeded();
 
 ConfigurationTime openTime;
@@ -61,6 +62,8 @@ ClickButton button(BUTTONPIN, LOW);
 ContactSwitch switchButton(SWITCHPIN);
 
 bool isStarting = true;
+
+Setting setting = Setting();
 
 void setup() {
     // Ouput pins
@@ -85,11 +88,11 @@ void setup() {
     switchState = digitalRead(SWITCHPIN);
     Particle.variable("switchState", switchState);
 
-    // Register the configureTime as a cloud function
+    // Register the configureTimeZone as a cloud function
     Particle.function("timeZone", configureTimeZone);
 
-    // Register the configureTime as a cloud function
-    Particle.function("time", configureTime);
+    // Register the configureOpenTime as a cloud function
+    Particle.function("openTime", configureOpenTime);
 
     // Register the configureReminderTime as a cloud function
     Particle.function("reminderTime", configureReminderTime);
@@ -97,28 +100,15 @@ void setup() {
     // Register the startOpenOperation as a cloud function
     Particle.function("open", startOpenOperation);
 
-    // Get the open time from EEPROM, set it to default if not saved
-    EEPROM.get(0, timeZone);
-    if (timeZone == 0xFFFFFFFF) {
-        // EEPROM was empty -> initialize value
-        timeZone = 0.0;
-    }
-
+    // Get the timeZone from EEPROM
+    timeZone = setting.getTimeZone();
     Time.zone(timeZone);
 
-    // Get the open time from EEPROM, set it to default if not saved
-    EEPROM.get(sizeof(timeZone), openTime);
-    if (openTime.version != 0) {
-        // EEPROM was empty -> initialize default value
-        openTime = { 0, 7, 0 };
-    }
+    // Get the open time from EEPROM
+    openTime = setting.getOpenTime();
 
-    // Get the reminder time from EEPROM, set it to default if not saved
-    EEPROM.get(sizeof(timeZone) + sizeof(openTime), reminderTime);
-    if (openTime.version != 0) {
-        // EEPROM was empty -> initialize default value
-        openTime = { 0, 20, 30 };
-    }
+    // Get the reminder time from EEPROM
+    reminderTime = setting.getRemiderTime();
 
     Serial.begin(9600);
 
@@ -305,7 +295,7 @@ int configureReminderTime(String time) {
         minute = minuteString.toInt();
         reminderTime = { 0, hour, minute };
 
-        EEPROM.put(sizeof(timeZone) + sizeof(openTime), reminderTime);
+        setting.setRemiderTime(reminderTime);
 
         requestDisplayReminderTime = true;
 
@@ -314,7 +304,7 @@ int configureReminderTime(String time) {
     return -1;
 }
 
-int configureTime(String time) {
+int configureOpenTime(String time) {
     // Declare the variables of the parts of the String
     String hourString, minuteString;
     int hour, minute;
@@ -328,7 +318,7 @@ int configureTime(String time) {
         minute = minuteString.toInt();
         openTime = { 0, hour, minute };
 
-        EEPROM.put(sizeof(timeZone), openTime);
+        setting.setOpenTime(openTime);
 
         requestDisplayConfigurationTime = true;
 
@@ -341,7 +331,7 @@ int configureTimeZone(String timeZoneString) {
     // Declare the variables of the parts of the String
     float timeZone = timeZoneString.toFloat();
 
-    EEPROM.put(0, timeZone);
+    setting.setTimeZone(timeZone);
 
     Time.zone(timeZone);
 
