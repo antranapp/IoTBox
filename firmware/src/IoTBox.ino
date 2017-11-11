@@ -18,6 +18,7 @@
 #include "ConfigurationTime.h"
 #include "OpenOperation.h"
 #include "Buzzer.h"
+#include "PinManager.h"
 #include "Setting.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
@@ -63,7 +64,8 @@ ContactSwitch switchButton(SWITCHPIN);
 
 bool isStarting = true;
 
-Setting setting = Setting();
+Setting setting;
+PinManager pinManager(&display, &setting);
 
 void setup() {
     // Ouput pins
@@ -121,6 +123,8 @@ void loop() {
     checkButtonState();
     checkSwitchState();
 
+    checkPin();
+
     if (requestOpeningOperation) {
         digitalWrite(LEDPIN, HIGH);
         buzzer.startForOpenOperation();
@@ -133,6 +137,28 @@ void loop() {
     displayInformation();
 
     isStarting = false;
+}
+
+void checkPin() {
+    PinManagerStatus status;
+    if (pinManager.updateAuthenticationStatus(&status)) {
+        switch (status) {
+            case ENTERING:
+                Serial.println("entering");
+                break;
+            case CANCELLED:
+                Serial.println("cancelled");
+                pinManager.stopAuthentication();
+                break;
+            case AUTHENTICATED:
+                Serial.println("authenticated");
+                startOpenOperation("");
+                break;
+            case INVALID:
+                Serial.println("invalid");
+                break;
+        }
+    }
 }
 
 void checkButtonState() {
@@ -154,6 +180,11 @@ void checkButtonState() {
         display.turnOn();
     }
 
+    if (function == 2 || function == -2) { // Double (LONG) click
+        Serial.println("Start Entering Pin");
+        pinManager.startAuthentication();
+    }
+
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
         startOpenOperation("");
     }
@@ -168,6 +199,9 @@ void checkSwitchState() {
     // Only display the status if state is changed
     if (currentState != switchState) {
         switchState = currentState;
+
+        // Cancel entering pin process
+        pinManager.stopAuthentication();
 
         requestDisplayStatus = true;
     }
@@ -218,10 +252,12 @@ void updateTime() {
 
 void displayTime() {
     if (requestDisplayTime) {
-        // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
-        String timeString = Time.format(Time.now(), "%T");
-        if (display.showTime(timeString)) {
-            requestDisplayTime = false;
+        if (!pinManager.isAuthenticating()) {
+            // Format from C library: https://www.gnu.org/software/libc/manual/html_node/Low_002dLevel-Time-String-Parsing.html
+            String timeString = Time.format(Time.now(), "%T");
+            if (display.showTime(timeString)) {
+                requestDisplayTime = false;
+            }
         }
     }
 }

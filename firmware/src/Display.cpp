@@ -8,6 +8,9 @@ Display::Display() {
 }
 
 void Display::setup() {
+    // Set up background backlight color
+    _lcd.setRGB(100, 100, 100);
+
     _lcd.begin(16, 2);
     _displayIsOn = true;
 }
@@ -109,11 +112,28 @@ bool Display::showStatus(bool status) {
     return false;
 }
 
+
+bool Display::showPin(String pin) {
+
+    _displayTimerCounter = 0;
+
+    if (!_isLCDBusy) {
+
+        turnOn();
+
+        _showText("Pin:" + pin, 0, 0);
+
+        return true;
+    }
+
+    return false;
+}
+
 void Display::_showText(String text, uint8_t row, uint8_t col) {
     _isLCDBusy = true;
 
     _lcd.setCursor(row,col);
-    _lcd.print("       ");
+    _lcd.print("        ");
     _lcd.setCursor(row,col);
     _lcd.print(text);
 

@@ -50,3 +50,26 @@ ConfigurationTime Setting::getRemiderTime() {
 void Setting::setRemiderTime(ConfigurationTime reminderTime) {
     EEPROM.put(sizeof(TimeZone) + sizeof(ConfigurationTime), reminderTime);
 }
+
+String Setting::getPin() {
+    const int STRING_BUF_SIZE = 5;
+    char stringBuf[STRING_BUF_SIZE];
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime);
+
+    EEPROM.get(address, stringBuf);
+    stringBuf[sizeof(stringBuf) - 1] = 0; // make sure it's null terminated
+
+    // Initialize a String object from the buffer
+    String str(stringBuf);
+
+    return str;
+}
+
+void Setting::setPin(String pin) {
+    const int STRING_BUF_SIZE = 5; // terminated character at the end
+	char stringBuf[STRING_BUF_SIZE];
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime);
+
+    pin.getBytes((unsigned char *)stringBuf, sizeof(stringBuf));
+    EEPROM.put(address, stringBuf);
+}

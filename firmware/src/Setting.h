@@ -1,3 +1,6 @@
+#ifndef SETTING
+#define SETTING
+
 #include "Particle.h"
 #include "ConfigurationTime.h"
 #include "TimeZone.h"
@@ -15,6 +18,10 @@ class Setting {
         ConfigurationTime getRemiderTime();
         void setRemiderTime(ConfigurationTime reminderTime);
 
+        String getPin();
+        void setPin(String pin);
     private:
 
 };
+
+#endif
