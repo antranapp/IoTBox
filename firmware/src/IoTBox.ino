@@ -126,7 +126,7 @@ void loop() {
 
     checkPin();
 
-    visualLEDs.updateNetworkStatus();
+    //visualLEDs.updateNetworkStatus();
 
     if (requestOpeningOperation) {
         buzzer.startForOpenOperation();
@@ -144,18 +144,14 @@ void checkPin() {
     if (pinManager.updateAuthenticationStatus(&status)) {
         switch (status) {
             case ENTERING:
-                Serial.println("entering");
                 break;
             case CANCELLED:
-                Serial.println("cancelled");
                 pinManager.stopAuthentication();
                 break;
             case AUTHENTICATED:
-                Serial.println("authenticated");
                 startOpenOperation("");
                 break;
             case INVALID:
-                Serial.println("invalid");
                 break;
         }
     }
@@ -181,12 +177,12 @@ void checkButtonState() {
     }
 
     if (function == 2 || function == -2) { // Double (LONG) click
-        Serial.println("Start Entering Pin");
         pinManager.startAuthentication();
     }
 
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
         startOpenOperation("");
+        visualLEDs.showNotification(VisualLEDs::Color::blue);
     }
 }
 
