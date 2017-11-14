@@ -20,14 +20,16 @@
 #include "Buzzer.h"
 #include "PinManager.h"
 #include "Setting.h"
+#include "VisualLEDs.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
 #define BUTTONPIN D2 // Button reserved for further usage
 #define BUZZERPIN D3 // Buzzer reserved for further usage
 #define RELAYPIN D4 // Relay to drive the electromagnetic lock.
-#define SWITCHPIN D6 // Switch for "LOCKED" or "OPEN" status.
-#define LEDPIN D7 // Status LED.
+#define SWITCHPIN D5 // Switch for "LOCKED" or "OPEN" status.
+#define LED_CLOCKPIN D6
+#define LED_DATAPIN D7
 
 unsigned long lastSync = millis();
 
@@ -44,8 +46,6 @@ Display display = Display();
 Buzzer buzzer(BUZZERPIN);
 
 Timer clockTimer(1000, updateTime); // timer used to display the clock on the lcd display
-
-OpenOperation openOperation(RELAYPIN, LEDPIN);
 
 volatile int hour;
 volatile int minute;
@@ -67,10 +67,11 @@ bool isStarting = true;
 Setting setting;
 PinManager pinManager(&display, &setting);
 
+VisualLEDs visualLEDs(LED_CLOCKPIN, LED_DATAPIN);
+
+OpenOperation openOperation(RELAYPIN, &visualLEDs);
+
 void setup() {
-    // Ouput pins
-    pinMode(LEDPIN, OUTPUT);
-    pinMode(RELAYPIN, OUTPUT);
 
     // Setup switchButton timers (all in milliseconds / ms)
     switchButton.debounceTime = 1000;   // Debounce timer in ms
@@ -125,13 +126,12 @@ void loop() {
 
     checkPin();
 
+    visualLEDs.updateNetworkStatus();
+
     if (requestOpeningOperation) {
-        digitalWrite(LEDPIN, HIGH);
         buzzer.startForOpenOperation();
         openOperation.start();
         requestOpeningOperation = false;
-    } else {
-        digitalWrite(LEDPIN, LOW);
     }
 
     displayInformation();

@@ -1,19 +1,20 @@
 #include "OpenOperation.h"
+#include "Particle.h"
 
-OpenOperation::OpenOperation(uint8_t relayPin, uint8_t ledPin) {
+OpenOperation::OpenOperation(uint8_t relayPin, VisualLEDs* visualLEDs) {
+    pinMode(relayPin, OUTPUT);
+
     _relayPin = relayPin;
-    _ledPin = ledPin;
+    _visualLEDs = visualLEDs;
     _isRunning = false;
 }
 
 void OpenOperation::start() {
     if (!_isRunning) {
         _isRunning = true;
-        digitalWrite(_ledPin, HIGH);
         digitalWrite(_relayPin, HIGH);
         delay(2000);
         digitalWrite(_relayPin, LOW);
-        digitalWrite(_ledPin, LOW);
         _isRunning = false;
     };
 }

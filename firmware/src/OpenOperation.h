@@ -1,9 +1,10 @@
 #include "Particle.h"
+#include "VisualLEDs.h"
 
 class OpenOperation {
 
     public:
-        OpenOperation(uint8_t relayPin, uint8_t ledPin);
+        OpenOperation(byte relayPin, VisualLEDs* visualLEDs);
 
         void start();
 
@@ -11,7 +12,7 @@ class OpenOperation {
 
     private:
         uint8_t _relayPin;
-        uint8_t _ledPin;
+        VisualLEDs* _visualLEDs;
 
         volatile bool _isRunning;
 };
