@@ -26,10 +26,15 @@ void VisualLEDs::updateNetworkStatus() {
     }
 }
 
-void VisualLEDs::showNotification(Color color) {
+void VisualLEDs::showNotification(Color color, BlinkingDuration duration, BlinkingPeriod period) {
     _blinkingCounter = 0;
     _blinkingFlag = false;
+
     _color = color;
+    _duration = duration;
+
+    _timer.stop();
+    _timer.changePeriod(period);
     _timer.reset();
 }
 
@@ -66,7 +71,7 @@ void VisualLEDs::_callback(void) {
 
     _blinkingCounter++;
 
-    if (_blinkingCounter > 6) {
+    if (_blinkingCounter > _duration) {
         _color = disabled;
         _blinkingCounter = 0;
         _blinkingFlag = false;

@@ -65,9 +65,10 @@ ContactSwitch switchButton(SWITCHPIN);
 bool isStarting = true;
 
 Setting setting;
-PinManager pinManager(&display, &setting);
 
 VisualLEDs visualLEDs(LED_CLOCKPIN, LED_DATAPIN);
+
+PinManager pinManager(&display, &setting);
 
 OpenOperation openOperation(RELAYPIN, &visualLEDs);
 
@@ -126,7 +127,7 @@ void loop() {
 
     checkPin();
 
-    //visualLEDs.updateNetworkStatus();
+    visualLEDs.updateNetworkStatus();
 
     if (requestOpeningOperation) {
         buzzer.startForOpenOperation();
@@ -144,6 +145,7 @@ void checkPin() {
     if (pinManager.updateAuthenticationStatus(&status)) {
         switch (status) {
             case ENTERING:
+                visualLEDs.showNotification(VisualLEDs::Color::blue, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
                 break;
             case CANCELLED:
                 pinManager.stopAuthentication();
@@ -152,6 +154,7 @@ void checkPin() {
                 startOpenOperation("");
                 break;
             case INVALID:
+                visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_very_long);
                 break;
         }
     }
@@ -182,7 +185,6 @@ void checkButtonState() {
 
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
         startOpenOperation("");
-        visualLEDs.showNotification(VisualLEDs::Color::blue);
     }
 }
 
@@ -293,7 +295,11 @@ void displayInformation() {
 }
 
 int startOpenOperation(String command) {
+
+    visualLEDs.showNotification(VisualLEDs::Color::blue, VisualLEDs::BlinkingDuration::duration_very_long, VisualLEDs::BlinkingPeriod::period_short);
+
     requestOpeningOperation = true;
+
     return 1;
 }
 
@@ -331,6 +337,8 @@ int configureReminderTime(String time) {
 
         requestDisplayReminderTime = true;
 
+        visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
+
         return 1;
     }
     return -1;
@@ -354,6 +362,8 @@ int configureOpenTime(String time) {
 
         requestDisplayConfigurationTime = true;
 
+        visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
+
         return 1;
     }
     return -1;
@@ -372,6 +382,8 @@ int configureTimeZone(String timeZoneString) {
 
     // Display the time
     requestDisplayTime = true;
+
+    visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
 
     return 1;
 
