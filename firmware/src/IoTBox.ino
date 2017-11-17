@@ -21,6 +21,7 @@
 #include "PinManager.h"
 #include "Setting.h"
 #include "VisualLEDs.h"
+#include "ModuleSwitch.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -72,6 +73,8 @@ PinManager pinManager(&display, &setting);
 
 OpenOperation openOperation(RELAYPIN, &visualLEDs);
 
+ModuleSwitch moduleSwitch;
+
 void setup() {
 
     // Setup switchButton timers (all in milliseconds / ms)
@@ -102,7 +105,7 @@ void setup() {
     Particle.function("reminderTime", configureReminderTime);
 
     // Register the startOpenOperation as a cloud function
-    Particle.function("open", startOpenOperation);
+    Particle.function("open", openHandler);
 
     // Get the timeZone from EEPROM
     timeZone = setting.getTimeZone();
@@ -117,6 +120,9 @@ void setup() {
     Serial.begin(9600);
 
     clockTimer.start();
+
+    // Update the module switching value
+    moduleSwitch.update();
 }
 
 void loop() {
@@ -151,7 +157,7 @@ void checkPin() {
                 pinManager.stopAuthentication();
                 break;
             case AUTHENTICATED:
-                startOpenOperation("");
+                startOpenOperation();
                 break;
             case INVALID:
                 visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_very_long);
@@ -177,14 +183,32 @@ void checkButtonState() {
 
     if (function == 1 || function == -1) { // (LONG) click
         display.turnOn();
+        uint8_t moduleSetting = moduleSwitch.getModuleSetting();
+        Serial.println(moduleSetting);
+        bool isButtonEnabled = moduleSwitch.isButtonEnabled();
+        Serial.println(isButtonEnabled);
+        bool isKeypadEnabled = moduleSwitch.isKeypadEnabled();
+        Serial.println(isKeypadEnabled);
+        bool isRemoteEnabled = moduleSwitch.isRemoteEnabled();
+        Serial.println(isRemoteEnabled);
+        bool isRFIDEnabled = moduleSwitch.isRFIDEnabled();
+        Serial.println(isRFIDEnabled);
     }
 
     if (function == 2 || function == -2) { // Double (LONG) click
-        pinManager.startAuthentication();
+        if (moduleSwitch.isKeypadEnabled()) {
+            pinManager.startAuthentication();
+        } else {
+            visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_medium);
+        }
     }
 
     if (function == 3 || function == -3) { // TRIPLE (LONG) click
-        startOpenOperation("");
+        if (moduleSwitch.isButtonEnabled()) {
+            startOpenOperation();
+        } else {
+            visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_medium);
+        }
     }
 }
 
@@ -294,13 +318,20 @@ void displayInformation() {
     }
 }
 
-int startOpenOperation(String command) {
+int openHandler(String command) {
+    if (moduleSwitch.isRemoteEnabled()) {
+        startOpenOperation();
+        return 1;
+    } else {
+        visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_medium);
+    }
 
+    return -1;
+}
+
+void startOpenOperation() {
     visualLEDs.showNotification(VisualLEDs::Color::blue, VisualLEDs::BlinkingDuration::duration_very_long, VisualLEDs::BlinkingPeriod::period_short);
-
     requestOpeningOperation = true;
-
-    return 1;
 }
 
 void checkOpenCondition() {

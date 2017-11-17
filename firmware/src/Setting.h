@@ -1,5 +1,5 @@
-#ifndef SETTING
-#define SETTING
+#ifndef __SETTING__
+#define __SETTING__
 
 #include "Particle.h"
 #include "ConfigurationTime.h"
