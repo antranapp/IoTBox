@@ -37,7 +37,7 @@ unsigned long lastSync = millis();
 int switchState = LOW; // HIGH = locked, LOW = open
 volatile bool requestDisplayStatus = true;
 volatile bool requestDisplayTime = false;
-volatile bool requestDisplayConfigurationTime = true;
+volatile bool requestDisplayOpenTime = true;
 volatile bool requestDisplayReminderTime = true;
 volatile bool requestOpeningOperation = false;
 
@@ -56,7 +56,9 @@ int configureOpenTime(String time);
 void syncTimeWithCloudIfNeeded();
 
 ConfigurationTime openTime;
+String openTimeString = "";
 ConfigurationTime reminderTime;
+String reminderTimeString = "";
 
 const char *PUBLISH_EVENT_NAME = "status";
 
@@ -94,6 +96,8 @@ void setup() {
     // Register the status of the box to Particle Cloud
     switchState = digitalRead(SWITCHPIN);
     Particle.variable("switchState", switchState);
+    Particle.variable("openTime", openTimeString);
+    Particle.variable("reminderTime", reminderTimeString);
 
     // Register the configureTimeZone as a cloud function
     Particle.function("timeZone", configureTimeZone);
@@ -113,9 +117,11 @@ void setup() {
 
     // Get the open time from EEPROM
     openTime = setting.getOpenTime();
+    openTimeString = getOpenTimeString();
 
     // Get the reminder time from EEPROM
     reminderTime = setting.getRemiderTime();
+    reminderTimeString = getReminderTimeString();
 
     Serial.begin(9600);
 
@@ -295,11 +301,11 @@ void displayReminderTime() {
     }
 }
 
-void displayConfigurationTime() {
-    if (requestDisplayConfigurationTime) {
+void displayOpenTime() {
+    if (requestDisplayOpenTime) {
 
         if (display.showOpenTime(openTime)) {
-            requestDisplayConfigurationTime = false;
+            requestDisplayOpenTime = false;
             buzzer.startForConfiguration();
         }
     }
@@ -309,7 +315,7 @@ void displayInformation() {
 
     displayTime();
 
-    displayConfigurationTime();
+    displayOpenTime();
 
     displayReminderTime();
 
@@ -354,7 +360,7 @@ int configureReminderTime(String time) {
     // Declare the variables of the parts of the String
     String hourString, minuteString;
     int hour, minute;
-    int delimeterPosition = time.indexOf(",");
+    int delimeterPosition = time.indexOf(":");
 
     if (delimeterPosition >= 0) {
 
@@ -365,6 +371,8 @@ int configureReminderTime(String time) {
         reminderTime = { 0, hour, minute };
 
         setting.setRemiderTime(reminderTime);
+
+        openTimeString = time;
 
         requestDisplayReminderTime = true;
 
@@ -379,7 +387,7 @@ int configureOpenTime(String time) {
     // Declare the variables of the parts of the String
     String hourString, minuteString;
     int hour, minute;
-    int delimeterPosition = time.indexOf(",");
+    int delimeterPosition = time.indexOf(":");
 
     if (delimeterPosition >= 0) {
 
@@ -391,7 +399,9 @@ int configureOpenTime(String time) {
 
         setting.setOpenTime(openTime);
 
-        requestDisplayConfigurationTime = true;
+        reminderTimeString = time;
+
+        requestDisplayOpenTime = true;
 
         visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
 
@@ -424,4 +434,12 @@ void publishData() {
 	char buf[256];
 	sprintf(buf, "{\"status\":%d,\"deviceID\":\"%s\"}", switchState, System.deviceID().c_str());
 	Particle.publish(PUBLISH_EVENT_NAME, buf, PRIVATE);
+}
+
+String getOpenTimeString() {
+    return String(openTime.hour) + ":" + String(openTime.minute);
+}
+
+String getReminderTimeString() {
+    return String(reminderTime.hour) + ":" + String(reminderTime.minute);
 }
