@@ -42,6 +42,7 @@ volatile bool requestDisplayReminderTime = true;
 volatile bool requestOpeningOperation = false;
 
 TimeZone timeZone = 0.0;
+String timeZoneString = "";
 
 Display display = Display();
 Buzzer buzzer(BUZZERPIN);
@@ -98,6 +99,7 @@ void setup() {
     Particle.variable("switchState", switchState);
     Particle.variable("openTime", openTimeString);
     Particle.variable("reminderTime", reminderTimeString);
+    Particle.variable("timeZone", timeZoneString);
 
     // Register the configureTimeZone as a cloud function
     Particle.function("timeZone", configureTimeZone);
@@ -114,6 +116,7 @@ void setup() {
     // Get the timeZone from EEPROM
     timeZone = setting.getTimeZone();
     Time.zone(timeZone);
+    timeZoneString = getTimeZoneString();
 
     // Get the open time from EEPROM
     openTime = setting.getOpenTime();
@@ -368,6 +371,15 @@ int configureReminderTime(String time) {
         minuteString = time.substring(delimeterPosition+1);
         hour = hourString.toInt();
         minute = minuteString.toInt();
+
+        if (hour < 0 && hour > 23) {
+            return -1;
+        }
+
+        if (minute < 0 && minute > 59) {
+            return -1;
+        }
+
         reminderTime = { 0, hour, minute };
 
         setting.setRemiderTime(reminderTime);
@@ -395,6 +407,15 @@ int configureOpenTime(String time) {
         minuteString = time.substring(delimeterPosition+1);
         hour = hourString.toInt();
         minute = minuteString.toInt();
+
+        if (hour < 0 && hour > 23) {
+            return -1;
+        }
+
+        if (minute < 0 && minute > 59) {
+            return -1;
+        }
+
         openTime = { 0, hour, minute };
 
         setting.setOpenTime(openTime);
@@ -410,11 +431,11 @@ int configureOpenTime(String time) {
     return -1;
 }
 
-int configureTimeZone(String timeZoneString) {
-    // Declare the variables of the parts of the String
-    float timeZone = timeZoneString.toFloat();
+int configureTimeZone(String timeZoneRemoteString) {
+    float timeZone = timeZoneRemoteString.toFloat();
 
     setting.setTimeZone(timeZone);
+    timeZoneString = timeZoneRemoteString;
 
     Time.zone(timeZone);
 
@@ -442,4 +463,8 @@ String getOpenTimeString() {
 
 String getReminderTimeString() {
     return String(reminderTime.hour) + ":" + String(reminderTime.minute);
+}
+
+String getTimeZoneString() {
+    return String(timeZone);
 }
