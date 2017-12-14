@@ -8,7 +8,6 @@ TimeZone Setting::getTimeZone() {
 
     EEPROM.get(0, timeZone);
     if (timeZone == 0xFFFFFFFF) {
-        // EEPROM was empty -> initialize value
         timeZone = 0.0;
     }
 
@@ -24,7 +23,6 @@ ConfigurationTime Setting::getOpenTime() {
 
     EEPROM.get(sizeof(TimeZone), openTime);
     if (openTime.version != 0) {
-        // EEPROM was empty -> initialize default value
         openTime = { 0, 7, 0 };
     }
 
@@ -40,7 +38,6 @@ ConfigurationTime Setting::getRemiderTime() {
 
     EEPROM.get(sizeof(TimeZone) + sizeof(ConfigurationTime), reminderTime);
     if (reminderTime.version != 0) {
-        // EEPROM was empty -> initialize default value
         reminderTime = { 0, 20, 30 };
     }
 
@@ -59,7 +56,6 @@ String Setting::getPin() {
     EEPROM.get(address, stringBuf);
     stringBuf[sizeof(stringBuf) - 1] = 0; // make sure it's null terminated
 
-    // Initialize a String object from the buffer
     String str(stringBuf);
 
     return str;
@@ -72,4 +68,36 @@ void Setting::setPin(String pin) {
 
     pin.getBytes((unsigned char *)stringBuf, sizeof(stringBuf));
     EEPROM.put(address, stringBuf);
+}
+
+
+String Setting::getNfcTagUid() {
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime) + 5;
+
+    NfcTagUid nfcTagUid;
+    EEPROM.get(address, nfcTagUid);
+    Serial.print("length: ");Serial.println(nfcTagUid.length);
+    if (nfcTagUid.version != 0) {
+        Serial.println("no uid found");
+        return "";
+    }
+
+    nfcTagUid.uid[nfcTagUid.length] = 0;
+
+    String uid(nfcTagUid.uid);
+
+    Serial.print("found uid: ");Serial.println(uid);
+
+    return uid;
+}
+
+void Setting::setNfcTagUid(String uid) {
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime) + 5;
+
+    NfcTagUid nfcTagUid;
+    uid.getBytes((unsigned char *)nfcTagUid.uid, sizeof(nfcTagUid.uid));
+    nfcTagUid.length = uid.length();
+    nfcTagUid.version = 0;
+
+    EEPROM.put(address, nfcTagUid);
 }

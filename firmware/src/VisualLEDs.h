@@ -19,7 +19,7 @@ class VisualLEDs {
 
         VisualLEDs(byte dataPin, byte clockPin);
 
-        void updateNetworkStatus();
+        void updateNetworkStatus(); // TODO: Move this to other class
         void showNotification(Color color, BlinkingDuration duration, BlinkingPeriod);
 
     private:

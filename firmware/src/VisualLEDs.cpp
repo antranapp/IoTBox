@@ -5,8 +5,8 @@ VisualLEDs::VisualLEDs(byte clockPin, byte dataPin) : _chainbleLEDs(clockPin, da
     _chainbleLEDs.init();
 
     // Show network status LED
-    //_wifiStatus = Particle.connected();
-    //_showNetworkStatus();
+    _wifiStatus = Particle.connected();
+    _showNetworkStatus();
 
     _blinkingFlag = false;
     _blinkingCounter = 0;
@@ -76,5 +76,6 @@ void VisualLEDs::_callback(void) {
         _blinkingCounter = 0;
         _blinkingFlag = false;
         _timer.stop();
+        _showNetworkStatus();
     }
 }

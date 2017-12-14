@@ -22,6 +22,7 @@
 #include "Setting.h"
 #include "VisualLEDs.h"
 #include "ModuleSwitch.h"
+#include "NFCManager.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -78,6 +79,8 @@ OpenOperation openOperation(RELAYPIN, &visualLEDs);
 
 ModuleSwitch moduleSwitch;
 
+NFCManager nfcManager(&setting);
+
 void setup() {
 
     // Setup switchButton timers (all in milliseconds / ms)
@@ -113,6 +116,8 @@ void setup() {
     // Register the startOpenOperation as a cloud function
     Particle.function("open", openHandler);
 
+    Particle.function("nfcTagUid", configureNfcTagUid);
+
     // Get the timeZone from EEPROM
     timeZone = setting.getTimeZone();
     Time.zone(timeZone);
@@ -132,15 +137,13 @@ void setup() {
 
     // Update the module switching value
     moduleSwitch.update();
+
+    // Initliaze NFCManager
+    nfcManager.setup();
 }
 
 void loop() {
     syncTimeWithCloudIfNeeded();
-
-    checkButtonState();
-    checkSwitchState();
-
-    checkPin();
 
     visualLEDs.updateNetworkStatus();
 
@@ -148,6 +151,11 @@ void loop() {
         buzzer.startForOpenOperation();
         openOperation.start();
         requestOpeningOperation = false;
+    } else {
+        checkButtonState();
+        checkSwitchState();
+        checkPin();
+        checkNfc();
     }
 
     displayInformation();
@@ -169,6 +177,20 @@ void checkPin() {
                 startOpenOperation();
                 break;
             case INVALID:
+                visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_very_long);
+                break;
+        }
+    }
+}
+
+void checkNfc() {
+    NFCManager::NFCManagerStatus status;
+    if (nfcManager.updateAuthenticationStatus(&status)) {
+        switch (status) {
+            case NFCManager::AUTHENTICATED:
+                startOpenOperation();
+                break;
+            case NFCManager::NOT_AUTHENTICATED:
                 visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_medium, VisualLEDs::BlinkingPeriod::period_very_long);
                 break;
         }
@@ -467,4 +489,16 @@ String getReminderTimeString() {
 
 String getTimeZoneString() {
     return String(timeZone);
+}
+
+int configureNfcTagUid(String nfcTagUid) {
+    if (nfcTagUid.length() > 10) {
+        visualLEDs.showNotification(VisualLEDs::Color::red, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
+        return -1;
+    }
+
+    nfcManager.updateNfcTagUid(nfcTagUid);
+    visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
+
+    return 1;
 }

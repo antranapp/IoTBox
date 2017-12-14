@@ -4,6 +4,7 @@
 #include "Particle.h"
 #include "ConfigurationTime.h"
 #include "TimeZone.h"
+#include "NfcTagUid.h"
 
 class Setting {
     public:
@@ -20,6 +21,9 @@ class Setting {
 
         String getPin();
         void setPin(String pin);
+
+        String getNfcTagUid();
+        void setNfcTagUid(String);
     private:
 
 };
