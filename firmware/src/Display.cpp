@@ -129,12 +129,28 @@ bool Display::showPin(String pin) {
     return false;
 }
 
-void Display::_showText(String text, uint8_t row, uint8_t col) {
+bool Display::showNfcTagUid(String uid) {
+
+    _displayTimerCounter = 0;
+
+    if (!_isLCDBusy) {
+
+        turnOn();
+
+        _showText(uid, 0, 1);
+
+        return true;
+    }
+
+    return false;
+}
+
+void Display::_showText(String text, uint8_t col, uint8_t row) {
     _isLCDBusy = true;
 
-    _lcd.setCursor(row,col);
+    _lcd.setCursor(col, row);
     _lcd.print("        ");
-    _lcd.setCursor(row,col);
+    _lcd.setCursor(col, row);
     _lcd.print(text);
 
     _isLCDBusy = false;

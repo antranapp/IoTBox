@@ -23,6 +23,7 @@
 #include "VisualLEDs.h"
 #include "ModuleSwitch.h"
 #include "NFCManager.h"
+#include "LocalServer.h"
 
 #define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
 
@@ -79,7 +80,9 @@ OpenOperation openOperation(RELAYPIN, &visualLEDs);
 
 ModuleSwitch moduleSwitch;
 
-NFCManager nfcManager(&setting);
+NFCManager nfcManager(&display, &setting);
+
+LocalServer localServer(&display, &setting);
 
 void setup() {
 
@@ -125,11 +128,11 @@ void setup() {
 
     // Get the open time from EEPROM
     openTime = setting.getOpenTime();
-    openTimeString = getOpenTimeString();
+    openTimeString = openTime.toString();
 
     // Get the reminder time from EEPROM
-    reminderTime = setting.getRemiderTime();
-    reminderTimeString = getReminderTimeString();
+    reminderTime = setting.getReminderTime();
+    reminderTimeString = reminderTime.toString();
 
     Serial.begin(9600);
 
@@ -140,6 +143,9 @@ void setup() {
 
     // Initliaze NFCManager
     nfcManager.setup();
+
+    // Initliaze LocalServer
+    localServer.setup();
 }
 
 void loop() {
@@ -156,11 +162,28 @@ void loop() {
         checkSwitchState();
         checkPin();
         checkNfc();
+        checkLocalServer();
     }
 
     displayInformation();
 
     isStarting = false;
+}
+
+void checkLocalServer() {
+    LocalServer::ServerStatus status;
+
+    if (localServer.service(&status)) {
+        switch (status) {
+            case LocalServer::OPEN_REQUESTED:
+                startOpenOperation();
+                break;
+            case LocalServer::SETTING_SAVED:
+                visualLEDs.showNotification(VisualLEDs::Color::green, VisualLEDs::BlinkingDuration::duration_short, VisualLEDs::BlinkingPeriod::period_short);
+                // TODO: need to reload setting
+                break;
+        }
+    }
 }
 
 void checkPin() {
@@ -184,6 +207,10 @@ void checkPin() {
 }
 
 void checkNfc() {
+    if (!moduleSwitch.isRFIDEnabled()) {
+        return;
+    }
+
     NFCManager::NFCManagerStatus status;
     if (nfcManager.updateAuthenticationStatus(&status)) {
         switch (status) {
@@ -224,6 +251,7 @@ void checkButtonState() {
         Serial.println(isRemoteEnabled);
         bool isRFIDEnabled = moduleSwitch.isRFIDEnabled();
         Serial.println(isRFIDEnabled);
+        Serial.println(WiFi.localIP());
     }
 
     if (function == 2 || function == -2) { // Double (LONG) click
@@ -404,7 +432,7 @@ int configureReminderTime(String time) {
 
         reminderTime = { 0, hour, minute };
 
-        setting.setRemiderTime(reminderTime);
+        setting.setReminderTime(reminderTime);
 
         openTimeString = time;
 
@@ -477,14 +505,6 @@ void publishData() {
 	char buf[256];
 	sprintf(buf, "{\"status\":%d,\"deviceID\":\"%s\"}", switchState, System.deviceID().c_str());
 	Particle.publish(PUBLISH_EVENT_NAME, buf, PRIVATE);
-}
-
-String getOpenTimeString() {
-    return String(openTime.hour) + ":" + String(openTime.minute);
-}
-
-String getReminderTimeString() {
-    return String(reminderTime.hour) + ":" + String(reminderTime.minute);
 }
 
 String getTimeZoneString() {

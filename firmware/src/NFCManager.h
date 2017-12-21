@@ -2,10 +2,11 @@
 
 #include "NFCClient.h"
 #include "Setting.h"
+#include "Display.h"
 
 class NFCManager {
     public:
-        NFCManager(Setting* setting);
+        NFCManager(Display* display, Setting* setting);
 
         enum NFCManagerStatus {
             IDLE = 0,
@@ -20,6 +21,7 @@ class NFCManager {
     private:
         NFCClient* _nfcClient;
         Setting* _setting;
+        Display* _display;
         String _uid;
         NFCManagerStatus _lastStatus;
 

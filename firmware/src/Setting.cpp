@@ -33,7 +33,7 @@ void Setting::setOpenTime(ConfigurationTime openTime) {
     EEPROM.put(sizeof(TimeZone), openTime);
 }
 
-ConfigurationTime Setting::getRemiderTime() {
+ConfigurationTime Setting::getReminderTime() {
     ConfigurationTime reminderTime;
 
     EEPROM.get(sizeof(TimeZone) + sizeof(ConfigurationTime), reminderTime);
@@ -44,7 +44,7 @@ ConfigurationTime Setting::getRemiderTime() {
     return reminderTime;
 }
 
-void Setting::setRemiderTime(ConfigurationTime reminderTime) {
+void Setting::setReminderTime(ConfigurationTime reminderTime) {
     EEPROM.put(sizeof(TimeZone) + sizeof(ConfigurationTime), reminderTime);
 }
 

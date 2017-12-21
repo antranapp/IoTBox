@@ -1,10 +1,10 @@
-#ifndef DISPLAY
-#define DISPLAY
+#pragma once
 
 #include "Grove_LCD_RGB_Backlight.h"
 #include "ConfigurationTime.h"
 
 class Display {
+
     public:
         Display();
 
@@ -20,6 +20,8 @@ class Display {
         bool showOpenTime(ConfigurationTime time);
         bool showReminderTime(ConfigurationTime time);
         bool showPin(String pin);
+        bool showNfcTagUid(String uid);
+
     private:
         rgb_lcd _lcd;
         volatile bool _isLCDBusy;
@@ -30,5 +32,3 @@ class Display {
         String _addLeadingZero(uint8_t num);
         String _timeToString(ConfigurationTime time);
 };
-
-#endif

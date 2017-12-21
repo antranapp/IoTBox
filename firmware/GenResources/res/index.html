@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IoTBox</title>
+</head>
+<body>Hello from IoTBox
+    <div>
+        <div>
+            <label>Open Time</label>
+            <input type="text" value="" name="openTime" id="txtOpenTime">
+        </div>
+        <div>
+            <label>Reminder Time</label>
+            <input type="text" value="" name="reminderTime" id="txtReminderTime">
+        </div>
+        <div>
+            <button id="btnLoad">Load</button>
+            <button id="btnSave">Save</button>
+        </div>
+    </div>
+    <div>
+        <button id="btnOpen">Open</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script src="xhr.js"></script>
+    <script>
+        var status = document.getElementById('status');
+        var btnLoad = document.getElementById('btnLoad');
+        var btnSave = document.getElementById('btnSave');
+        var btnOpen = document.getElementById('btnOpen');
+        var txtOpenTime = document.getElementById('txtOpenTime');
+        var txtReminderTime = document.getElementById('txtReminderTime');
+
+        function loadSettings() {
+            ajax(
+                {
+                    "url": "getSettings"
+                },
+                function(error, body, res) {
+                    if (!error) {
+                        try {
+                            var data = JSON.parse(body);
+                            txtOpenTime.value = data.openTime;
+                            txtReminderTime.value = data.reminderTime;
+                        } catch(e) {
+                            status.innerHTML = "Error";
+                        }
+                    }
+                }
+            );
+        }
+
+        loadSettings();
+
+        btnSave.addEventListener('click', function(ev) {
+            loadSettings();
+        });
+
+        btnSave.addEventListener('click', function(ev) {
+            var openTime = txtOpenTime.value;
+            var reminderTime = txtReminderTime.value;
+            ajax({
+            	"url": "postSettings",
+            	"method": "POST",
+            	"data": JSON.stringify({
+            		"openTime": openTime,
+                    "reminderTime": reminderTime
+            	})
+            }, function(error, body, response) {
+            	if (!error) {
+                    try {
+                        var data = JSON.parse(body);
+
+                        loadSettings();
+                    } catch(e) {
+                        status.innerHTML = "Error";
+                    }
+            	}
+            });
+        }, false);
+
+        btnOpen.addEventListener('click', function(ev) {
+            ajax(
+                {
+                    "url": "getOpenOperation"
+                },
+                function(error, body, response) {
+                    if (!error) {
+                        try {
+                            var data = JSON.parse(body);
+                        } catch(e) {
+                            status.innerHTML = "Error";
+                        }
+                    }
+                }
+            );
+        }, false);
+
+    </script>
+</body>
+</html>

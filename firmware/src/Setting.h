@@ -1,5 +1,4 @@
-#ifndef __SETTING__
-#define __SETTING__
+#pragma once
 
 #include "Particle.h"
 #include "ConfigurationTime.h"
@@ -16,8 +15,8 @@ class Setting {
         ConfigurationTime getOpenTime();
         void setOpenTime(ConfigurationTime openTime);
 
-        ConfigurationTime getRemiderTime();
-        void setRemiderTime(ConfigurationTime reminderTime);
+        ConfigurationTime getReminderTime();
+        void setReminderTime(ConfigurationTime reminderTime);
 
         String getPin();
         void setPin(String pin);
@@ -27,5 +26,3 @@ class Setting {
     private:
 
 };
-
-#endif

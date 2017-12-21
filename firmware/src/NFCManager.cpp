@@ -2,7 +2,7 @@
 #include "NfcTag.h"
 #include <functional>
 
-NFCManager::NFCManager(Setting* setting): _setting(setting) {
+NFCManager::NFCManager(Display* display, Setting* setting): _display(display), _setting(setting) {
     using namespace std::placeholders;
 
     _nfcClient = new NFCClient(std::bind(&NFCManager::_nfcClientCallback, this, _1));
@@ -37,7 +37,8 @@ void NFCManager::updateNfcTagUid(String uid) {
 
 void NFCManager::_nfcClientCallback(NfcTag tag) {
     String tagUid = tag.getUidString();
-    Serial.print("uid: ");Serial.println(tag.getUidString());
+    Serial.print("uid: ");Serial.println(tagUid);
+    _display->showNfcTagUid(tagUid);
     if (tagUid == _uid) {
         _lastStatus = AUTHENTICATED;
     } else {
