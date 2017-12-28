@@ -151,18 +151,19 @@ void setup() {
 void loop() {
     syncTimeWithCloudIfNeeded();
 
-    visualLEDs.updateNetworkStatus();
-
     if (requestOpeningOperation) {
         buzzer.startForOpenOperation();
         openOperation.start();
         requestOpeningOperation = false;
     } else {
+        openOperation.update();
+
         checkButtonState();
         checkSwitchState();
         checkPin();
         checkNfc();
         checkLocalServer();
+        visualLEDs.updateNetworkStatus();
     }
 
     displayInformation();
@@ -317,7 +318,6 @@ void displayStatus() {
 }
 
 void updateTime() {
-
     hour = Time.hour();
     minute = Time.minute();
     second = Time.second();

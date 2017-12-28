@@ -61,8 +61,6 @@ void LocalServer::restAPI_PostLogin(RestAPIEndpointMsg& apiMsg, String& retStr) 
     String postStr = (const char *)apiMsg._pMsgContent;
     String passwordString = RdJson::getString("password", "", postStr.c_str());
     String localPassword = _setting->getPassword();
-    Serial.print("passwordString: ");Serial.println(passwordString);
-    Serial.print("localPassword: ");Serial.println(localPassword);
     if (passwordString == localPassword) {
         // authorized
         _token = _generateToken();
@@ -85,9 +83,6 @@ void LocalServer::restAPI_PostChangePassword(RestAPIEndpointMsg& apiMsg, String&
     String oldPasswordString = RdJson::getString("oldPassword", "", postStr.c_str());
     String newPasswordString = RdJson::getString("newPassword", "", postStr.c_str());
     String localPassword = _setting->getPassword();
-    Serial.print("oldPasswordString: ");Serial.println(oldPasswordString);
-    Serial.print("newPasswordString: ");Serial.println(newPasswordString);
-    Serial.print("localPassword: ");Serial.println(localPassword);
     if (oldPasswordString == localPassword) {
         _setting->setPassword(newPasswordString);
         _tokenTime = millis();

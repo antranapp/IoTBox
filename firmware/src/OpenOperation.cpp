@@ -12,10 +12,18 @@ OpenOperation::OpenOperation(uint8_t relayPin, VisualLEDs* visualLEDs) {
 void OpenOperation::start() {
     if (!_isRunning) {
         _isRunning = true;
+        _startTime = millis();
         digitalWrite(_relayPin, HIGH);
-        delay(2000);
-        digitalWrite(_relayPin, LOW);
-        _isRunning = false;
+        //delay(2000);
+    };
+}
+
+void OpenOperation::update() {
+    if (_isRunning) {
+        if (millis() - _startTime > 1000 * 2) { // 2 seconds
+            digitalWrite(_relayPin, LOW);
+            _isRunning = false;
+        }
     };
 }
 

@@ -14,7 +14,7 @@ class VisualLEDs {
         };
 
         enum BlinkingPeriod: unsigned int {
-            period_short = 50, period_medium = 100, period_long = 200, period_very_long = 1000
+            period_short = 100, period_medium = 400, period_long = 800, period_very_long = 1200
         };
 
         VisualLEDs(byte dataPin, byte clockPin);

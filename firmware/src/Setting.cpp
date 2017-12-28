@@ -76,7 +76,6 @@ String Setting::getNfcTagUid() {
 
     NfcTagUid nfcTagUid;
     EEPROM.get(address, nfcTagUid);
-    Serial.print("length: ");Serial.println(nfcTagUid.length);
     if (nfcTagUid.version != 0) {
         Serial.println("no uid found");
         return "";
@@ -85,8 +84,6 @@ String Setting::getNfcTagUid() {
     nfcTagUid.uid[nfcTagUid.length] = 0;
 
     String uid(nfcTagUid.uid);
-
-    Serial.print("found uid: ");Serial.println(uid);
 
     return uid;
 }
@@ -107,18 +104,13 @@ String Setting::getPassword() {
 
     Password password;
     EEPROM.get(address, password);
-    Serial.print("length: ");Serial.println(password.length);
-    Serial.print("version: ");Serial.println(password.version);
     if (password.version != 1) {
-        Serial.println("no password found");
         return "password"; // default password
     }
 
     password.value[password.length] = 0;
 
     String passwordString(password.value);
-
-    Serial.print("found password: ");Serial.println(passwordString);
 
     return passwordString;
 }

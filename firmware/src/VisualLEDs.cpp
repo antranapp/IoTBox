@@ -1,7 +1,7 @@
 #include "VisualLEDs.h"
 #include "Particle.h"
 
-VisualLEDs::VisualLEDs(byte clockPin, byte dataPin) : _chainbleLEDs(clockPin, dataPin, VisualLEDs::NUM_LEDS), _timer(50, &VisualLEDs::_callback, *this, false) {
+VisualLEDs::VisualLEDs(byte clockPin, byte dataPin) : _chainbleLEDs(clockPin, dataPin, VisualLEDs::NUM_LEDS), _timer(100, &VisualLEDs::_callback, *this, false) {
     _chainbleLEDs.init();
 
     // Show network status LED
@@ -76,6 +76,8 @@ void VisualLEDs::_callback(void) {
         _blinkingCounter = 0;
         _blinkingFlag = false;
         _timer.stop();
+
+        // Restore the network status LED
         _showNetworkStatus();
     }
 }

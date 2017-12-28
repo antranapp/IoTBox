@@ -18,7 +18,6 @@ void Display::setup() {
 void Display::updateTimerCounter() {
     if (_displayIsOn) {
         _displayTimerCounter++;
-        //Serial.println(_displayTimerCounter);
         if (_displayTimerCounter > 20) {
             turnOff();
             _displayTimerCounter = 0;
