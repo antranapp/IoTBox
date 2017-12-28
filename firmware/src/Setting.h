@@ -4,6 +4,7 @@
 #include "ConfigurationTime.h"
 #include "TimeZone.h"
 #include "NfcTagUid.h"
+#include "Password.h"
 
 class Setting {
     public:
@@ -23,6 +24,9 @@ class Setting {
 
         String getNfcTagUid();
         void setNfcTagUid(String);
+
+        String getPassword();
+        void setPassword(String passwordString);
     private:
 
 };

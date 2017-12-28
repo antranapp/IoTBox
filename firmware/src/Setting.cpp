@@ -101,3 +101,35 @@ void Setting::setNfcTagUid(String uid) {
 
     EEPROM.put(address, nfcTagUid);
 }
+
+String Setting::getPassword() {
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime) + 5 + sizeof(NfcTagUid);
+
+    Password password;
+    EEPROM.get(address, password);
+    Serial.print("length: ");Serial.println(password.length);
+    Serial.print("version: ");Serial.println(password.version);
+    if (password.version != 1) {
+        Serial.println("no password found");
+        return "password"; // default password
+    }
+
+    password.value[password.length] = 0;
+
+    String passwordString(password.value);
+
+    Serial.print("found password: ");Serial.println(passwordString);
+
+    return passwordString;
+}
+
+void Setting::setPassword(String passwordString) {
+    int address = sizeof(TimeZone) + sizeof(ConfigurationTime) + sizeof(ConfigurationTime) + 5 + sizeof(NfcTagUid);
+
+    Password password;
+    passwordString.getBytes((unsigned char *)password.value, sizeof(password.value));
+    password.length = passwordString.length();
+    password.version = 1;
+
+    EEPROM.put(address, password);
+}
