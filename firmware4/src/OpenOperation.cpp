@@ -39,13 +39,17 @@ void OpenOperation::start(uint8_t index) {
     };
 }
 
-void OpenOperation::update() {
+bool OpenOperation::update() {
     if (_isRunning) {
         if (millis() - _startTime > 1000 * 2) { // 2 seconds
             digitalWrite(_relayPin, LOW);
             _isRunning = false;
+
+            return true;
         }
     };
+
+    return false;
 }
 
 bool OpenOperation::isRunning() {

@@ -6,7 +6,7 @@ class OpenOperation {
         OpenOperation(uint8_t relayPin_1, uint8_t relayPin_2, uint8_t relayPin_3, byte relayPin_4);
 
         void start(uint8_t relayPin);
-        void update();
+        bool update();
 
         bool isRunning();
 
