@@ -99,16 +99,12 @@ void checkButtonState() {
     // Update button state
     button.Update();
 
-
     // Save click codes in function, as click codes are reset at next Update()
     if (button.clicks != 0) {
         function = button.clicks;
-        Serial.print("found click: ");
-        Serial.println(function);
     }
 
     if (function == 2 || function == -2) { // Double (LONG) click
-        Serial.println("startAuthentication");
         visualLEDs.setColor(VisualLEDs::Color::green);
         pinManager.startAuthentication();
     }
@@ -138,7 +134,7 @@ void checkPin() {
                 startOpenOperation(3);
                 break;
             case AUTHENTICATED_4:
-                visualLEDs.setColor(VisualLEDs::Color::disabled);            
+                visualLEDs.setColor(VisualLEDs::Color::disabled);
                 startOpenOperation(4);
                 break;
             case INVALID:
