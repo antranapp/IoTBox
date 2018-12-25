@@ -21,6 +21,9 @@
 #define VISUALLED_CLOCKPIN A0
 #define VISUALLED_DATAPIN A1
 
+// SEMI_AUTOMATIC loop is still running even without Internet connection.
+SYSTEM_MODE(SEMI_AUTOMATIC);
+
 unsigned long lastSync = millis();
 
 volatile bool requestOpeningOperation = false;
