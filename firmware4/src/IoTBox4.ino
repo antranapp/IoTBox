@@ -21,8 +21,11 @@
 #define VISUALLED_CLOCKPIN A0
 #define VISUALLED_DATAPIN A1
 
+STARTUP(WiFi.selectAntenna(ANT_EXTERNAL));
 // SEMI_AUTOMATIC loop is still running even without Internet connection.
 SYSTEM_MODE(SEMI_AUTOMATIC);
+// SYSTEM_THREAD enables parallel operations of user & system codes
+SYSTEM_THREAD(ENABLED);
 
 unsigned long lastSync = millis();
 
@@ -74,9 +77,11 @@ void loop() {
     checkButtonState();
     checkPin();
 
-    //visualLEDs.updateNetworkStatus();
-
     isStarting = false;
+
+    if (Particle.connected() == false) {
+      Particle.connect();
+    }
 }
 
 void syncTimeWithCloudIfNeeded() {
